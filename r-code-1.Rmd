@@ -1,0 +1,456 @@
+---
+title: "Superstore Data Analysis"
+author: "Ayan Dey"
+Date: "2023-10-24"
+output: html_document
+---
+
+```{r setup, include=FALSE,warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Superstore Data Analysis
+
+Today I am going to work on Superstore data set. Analyse the data by \*\*R\*\* and get some useful insights about the data.
+
+firstly set up the working directory
+
+```{r}
+# to see the current working directory
+getwd()
+```
+
+```{r warning= TRUE}
+# set up the working directory
+setwd("C:\\Users\\growth\\Desktop\\R project")
+```
+
+```{r}
+# confirmation of working directory
+getwd()
+```
+
+```{r}
+# importing all the  libraaries what I need the most 
+ 
+library(tidyverse)
+library(skimr)
+
+```
+
+```{r}
+# importing the data -- I will always take the master dataset in variable = ** x **
+x <- read.csv("superstore.csv")
+x %>% head(7)
+```
+
+## Explore Understand and Clean the data
+
+```{r}
+# see the dimenstion of the dataset
+dim(x)
+```
+
+Number of observation is : 9996
+
+Number of variable is : 22
+
+```{r}
+# let see all the names of the 22 variables 
+names(x)
+```
+```{r}
+head(x$sub.category)
+```
+
+
+```{r}
+# Rename sub.Category variable name into Sub_Category
+x <-x %>% rename(sub_category=sub.category)
+
+```
+
+```{r}
+# confirmation
+names(x)
+```
+
+```{r}
+# let rename all the variable name to smaller case
+names(x) <- tolower(names(x))
+```
+
+```{r}
+# confirmation
+names(x)
+```
+
+```{r}
+# let see the structure and datatype of variables of data
+glimpse(x)
+```
+
+now work with each variable
+
+```{r}
+# change datatype of order_date variable datatype into - date datatype
+x$order_date<- as.Date(x$order_date)
+```
+
+```{r}
+# confirmation
+class(x$order_date)
+```
+
+```{r}
+# change datatype of ship_date variable datatype into - date datatype
+x$ship_date<- as.Date(x$ship_date)
+```
+
+```{r}
+# confirmation
+class(x$ship_date)
+```
+
+```{r}
+# change datatype of ship_mode variable datatype into factor datatype
+x$ship_mode<- as.factor(x$ship_mode)
+```
+
+```{r}
+# confirmation
+class(x$ship_mode)
+```
+
+```{r}
+# change datatype of sales variable datatype into - Numeric datatype
+x$sales<- as.numeric(x$sales)
+```
+
+NULL value introduced in sales vector
+
+```{r}
+# let ignore the NULL value for now and do the pending operation
+x$sales<- as.numeric(x$sales,na.rm=TRUE)
+```
+
+```{r}
+# confirmation
+class(x$sales)
+```
+
+```{r}
+# let see again the structure of the data
+glimpse(x)
+```
+
+-   there are a x variable which make me dought so let work on it
+
+    ```{r}
+    # let see the total length of x variable
+    length(x$x)
+    ```
+
+```{r}
+# there have total 9996 obs. 
+# let see how many NULL value are there
+sum(is.na(x$x))
+```
+
+```{r}
+# let see how much data hoding that variable
+sum( ! is.na(x$x))
+```
+
+total 9996 values and 9990 NULL
+
+total 6 values are there
+
+```{r}
+# let locate those values
+which( ! is.na(x$x))
+```
+
+```{r}
+# let see all those obs. and those values understand importancy
+x[ which (!is.na(x$x)), ] 
+```
+
+**conclusion** : I can't just drop the x variable becaue it hold number 6 values
+
+but those values are unidentified and very confusion , what the values belongs to
+
+after confirmation I decided to drop this variable.
+
+```{r}
+# now let locate the variable
+which(names(x)== "x")
+```
+
+```{r}
+# let remove that  by creating another variable ( Y)
+y<-x[ , -22]
+```
+
+```{r}
+# confirmation
+names(y)
+```
+
+now working variable will be : [**y**]{.underline}
+
+```{r}
+print(" The new dimension is: " )
+dim(y)
+```
+
+```{r}
+# final confirmation 
+glimpse(y)
+```
+
+all variable name , data type are set
+
+now its time to deep dive inside the data
+
+## NULL values
+
+```{r}
+# let check NULL values of each variable
+# y <- working data
+for ( i in 1:ncol(y)){
+    print(paste(" null value of ",names(x[i]),"Obs. ", " index: ",i ))
+     print(sum(is.na(y[i])) )
+        }
+```
+
+let see each variable which have NULL values
+
+```{r}
+# let see all those data with max null
+y[ , c(1:5)] %>% head(7)
+```
+
+```{r}
+# let see with out order_date and ship_date
+head(y[ , -c(3:4)])
+```
+
+It understood that this two column don't have much value right now to analysis , so I decided to drop this two columns .
+
+-But also there have null in quantity(1), sales(6), discount(6) and profit ( 1) ,but I should not remove all those rows and just ignore when analysis.
+
+```{r}
+# let store the data without order_date and ship_date
+y<- y[ , -c(3:4)]
+```
+
+```{r}
+head(y)
+```
+
+#### Duplicates
+
+```{r}
+# just over view the boolean matrix 
+# duplicated(x)
+```
+
+```{r}
+# retrive all duplicate obs.
+z<-y[duplicated(y), ]
+```
+
+```{r}
+# let see the duplicate values
+z
+write.csv(z,"see_in_LibreOffice.csv")
+```
+
+```{r}
+# now remove all the duplicate obs. and make data clean
+y<-y[!duplicated(y), ]
+head(y)
+```
+
+#### Now the data is cleaned and ready to save and Analysis**
+
+```{r}
+# now save the cleaned file 
+# write.csv(y,"superstore_cleaned.csv")
+```
+
+## Analyse
+
+```{r}
+glimpse(y)
+```
+
+now I will work with each categorical vectors
+
+##### Let Analyse the segment vector
+
+```{r}
+# to see the repeating factor values are in the ship_mode 
+sort(table(y$ship_mode),decreasing = TRUE)
+```
+
+```{r}
+# let see by graph
+barplot(sort(table(y$ship_mode)))
+```
+
+##### Analyse the ship_mode vector with respect to quantity values
+
+```{r}
+
+#  for(i in 1 : nrow(y) ){
+#   ifelse(y$ship_mode == 'Second Class', sum1[ , ]<-sum(y$quantity[i, ]),1*1 ) 
+#     sum1= count(y$quantity[i, ])}
+# }
+# print(sum1) 
+```
+
+pull the ship_mode factore w.r.t frequency of quantity
+
+```{r}
+# pull with frequency with First class
+ship_mode_result<- y %>%
+  select(ship_mode,quantity) %>% 
+  filter(ship_mode == "First Class")
+m<-sum(ship_mode_result$quantity)
+m
+```
+
+```{r}
+# pull with frequency with Secound class
+
+ship_mode_result<- y %>%
+  select(ship_mode,quantity) %>% 
+  filter(ship_mode == "Second Class")
+n<-sum(ship_mode_result$quantity)
+n
+```
+
+```{r}
+# pull with frequency with Standard class
+
+ship_mode_result<- y %>%
+  select(ship_mode,quantity) %>% 
+  filter(ship_mode == "Standard Class")
+o<-sum(ship_mode_result$quantity,na.rm=TRUE)
+o
+```
+
+```{r}
+# pull with frequency with Same Day
+
+ship_mode_result<- y %>%
+  select(ship_mode,quantity) %>% 
+  filter(ship_mode == "Same Day")
+p<-sum(ship_mode_result$quantity,na.rm=TRUE)
+p
+```
+
+```{r}
+# let create a data frame of ship_mode for deep analyse
+ship_class <-c ("First Class","Second Class","Standard Class","Same Day")
+quantity <- c(m,n,o,p)
+ship_mode_result <- data.frame( ship_class , quantity )
+```
+
+```{r}
+# showing values
+ship_mode_result
+```
+
+```{r}
+# let create a pie chart to understand 
+p<- c(ship_mode_result$quantity)
+labels <- c(ship_mode_result$ship_class)
+pie(p,labels,main="ship mode of each class", col= rainbow(length(x)))
+```
+
+Let Analyse category vector
+
+```{r}
+# let see the frequency
+table(y$category)
+```
+
+```{r}
+ggplot(data=y)+
+  geom_bar(mapping=aes(x=category),fill="blue",color="red")+
+  labs(title = "Frequency of category",
+       subtitle="this bar graph shows which type of category are ordered")
+```
+
+### Now working with Numeric Data
+
+Let work with sales vector
+
+```{r}
+class(y$sales)
+```
+
+ok : ( data Type )
+
+```{r}
+# let see over view of the distribution of sales vector
+summary(y$sales)
+```
+
+```{r}
+boxplot(y$sales)
+```
+
+as I see max data are contain within 17.248 to 209.858 , also have many outliers ( shown in box plot) and some NULL (6) values. dense
+
+```{r}
+# let take the maximun dense data
+# And see the mean sales without outliers and NULL valuee 
+mean_sales <- y %>% select(sales) %>% drop_na(sales) %>% 
+  filter(sales >= 17.248 & sales <= 209.858)
+mean(mean_sales$sales)
+```
+
+now compare it with median, which can give very closely result.
+
+-   mean = 229.63
+
+-   mean with out NULL & outliers = [**72.13**]{.underline}
+
+-   median = [**54.356**]{.underline}
+
+    **Time series**
+
+```{r}
+glimpse(x)
+```
+
+Let decide which variable is good option for Time series
+
+```{r}
+# let see at order_date variable
+print(paste("total lenth : ",length(x$order_date)))
+print(paste("total NULL values : ",sum(is.na(x$order_date))))
+```
+
+```{r}
+# let see at ship_date variable
+print(paste("total lenth : ",length(x$ship_date)))
+print(paste("total NULL values : ",sum(is.na(x$ship_date))))
+```
+
+ship_date (NULL 6097 ) \> order_date(NULL 5952)
+
+though there is no cancel order . it is good idea to work with order_date.
+
+
+#### Now do some Question Answer solve
+
+```{r}
+## which are the most selling product ?
+x1<-y %>% mutate('total_sales' =(sales*quantity)-(discount*quantity))
+x1 %>% arrange(-total_sales) %>% select(product_name) %>% head(10)
+```
