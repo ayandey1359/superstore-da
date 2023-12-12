@@ -1,0 +1,225 @@
+---
+title: "SQL | R connect | Data Analyse"
+author: "Ayan"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# SQL \| R project
+
+###### In this project I will work on database by **SQL** in R enviroment.
+
+-   step 1 - firstly i will import a dataset( superstore dataset).
+-   step 2 - then by using R i will break that dataset into four table.
+-   step 3 - the i will upload all the dataset in SQL server. and creat link with all of them .
+-   step 4- then by using SQL i will analyse the data set and solve questions.
+
+# Lets Start.
+
+```{r}
+# get to know about the current directory 
+getwd()
+```
+
+```{r}
+# import library
+library(tidyverse)
+```
+
+```{r}
+#let import the dataset
+data1 <- read.csv("superstore.csv") # the file present in this same directory
+```
+
+```{r}
+# let see the dataet
+View(data1)
+```
+
+```{r}
+# let some minor cleaning on the variable name them i will jump into SQL part
+# Rename sub.Category varriable name into Sub_Category
+data1 <-data1 %>% rename(sub_category=Sub.Category)
+```
+
+```{r}
+# let rename all the variable name to smaller case
+names(data1) <- tolower(names(data1))
+```
+
+```{r}
+# now remove all the duplicate obs. and make data clean
+data1<-data1[!duplicated(data1), ]
+```
+
+```{r}
+View(data1)
+```
+
+##### ok now the dataset is fine, i do skip the entire cleaning proceess because
+
+for now my main motive is to work in the **SQL**. so for now tiime being I stay all the null values there .
+
+##### Lets creat some table for database;
+
+```{r}
+superstore <- data.frame(c(data1[1:5])) # table 1
+```
+
+```{r}
+customers <- data.frame(c(data1[1],data1[6:13])) # table 2
+```
+
+```{r}
+products <- data.frame(c(data1[1],data1[14:17])) # table 3
+```
+
+```{r}
+sales <- data.frame(c(data1[1],data1[18:21])) # table 4
+```
+
+##### Let watch all the tables with a small no of observation
+
+```{r}
+head(superstore) # table 1
+```
+
+```{r}
+head(customers) # table 2
+```
+
+```{r}
+head(products) # table 3
+```
+
+```{r}
+head(sales) # table 4
+```
+
+\##### now though all the row_id is unique that's why i will make it as a \*\* primary key\*\*
+
+```{r}
+# let save all those table in my SQL directory and load it in database
+write.csv(superstore,"C:\\Users\\growth\\Desktop\\SQL project\\superstore.csv")
+write.csv(customers,"C:\\Users\\growth\\Desktop\\SQL project\\customers.csv")
+write.csv(products,"C:\\Users\\growth\\Desktop\\SQL project\\products.csv")
+write.csv(sales,"C:\\Users\\growth\\Desktop\\SQL project\\sales.csv")
+```
+
+# SQL \| R --
+
+-   Now before began to connect with MySQL database.I am going to terminal and load all the dataset and and connect them by relation with keys. and all the SQL code are here [here](https://github.com/ayandey1359/portfolio/blob/main/SQL/Project_3_SQL_R_ExtensionScript.sql)
+
+Database ER Diagram
+
+![ER Diagram of DataBase](ER_diagram.png)
+
+\##### let connect R with SQL server
+
+```{r warning=FALSE}
+# let import all the essential libraries
+library(RODBC)
+library(DBI)
+library(odbc)
+```
+
+```{r}
+# now connect with the database - MySQL
+conn <- odbcConnect("mysql")
+```
+
+```{r warning=FALSE}
+# let see the connection dsn details
+print(conn)
+```
+
+```{r}
+# metadata details
+conn_info <- odbcGetInfo(conn)
+conn_info
+```
+
+# let retrieve the sales data and do analyse it
+
+```{r}
+# retrive the data from data base and store it in a variable
+sales<- sqlQuery(conn,'select * from sales')
+
+```
+
+```{r}
+# let understand the datatype of sales table from database
+glimpse(sqlQuery(conn,'select * from sales'))
+```
+
+```{r}
+# let view that data set in tidy manner
+# View(sales)
+head(sales)
+```
+
+```{r}
+# let overlook the dataset , and understand how the sales vector distribute
+summary(sales$sales)
+```
+
+by observing this summary its understood that the mean and median values large apart , there may stay many outliers.
+
+```{r}
+# let see by histogram
+hist(sales$sales,main="Sales Vector Distribution",xlab="Sales       
+     Value",ylab="Frequency",col="blue",
+     border = "black")
+```
+
+```{r}
+# though max values are present 0 to 2000 . let see those area 
+hist(sales$sales,main="Sales Vector Distribution",xlab="Sales       
+     Value",ylab="Frequency",xlim=c(0,2500),col="blue",
+     border = "black")
+```
+
+```{r}
+# let see by histogram
+hist(sales$sales,main="Sales Vector Distribution",xlab="Sales       
+     Value",ylab="Frequency",xlim=c(0,2000),col="blue",
+     border = "black",breaks=5)
+```
+
+```{r}
+# let see the data to understand 
+sales %>% select(sales) %>%  na.omit() %>% filter(sales<2000) # %>% View()
+```
+
+```{r}
+hist(sales$sales,main="Sales Vector Distribution",xlab="Sales       
+     Value",ylab="Frequency",xlim=c(0,2000),col="blue",
+     border = "black",breaks=500)
+```
+
+```{r}
+# let see the lower sales values by set of Y limit 
+hist(sales$sales,main="Sales Vector Distribution",xlab="Sales       
+     Value",ylab="Frequency",xlim=c(0,2000),ylim=c(0,100),col="blue",
+     border = "black",breaks=500)
+```
+
+conclusion : There is like avg 100 to 150 obs. which have max sales values. conclude by Histogram observation. thats why Mean and Median Value are far apart. ==================================================================================
+
+[**Let Answer some question :by SQL**]{.underline}
+
+```{r}
+# let see the customer table from database
+head(sqlQuery(conn,'select * from customers'))
+```
+
+```{r}
+# let understand the data type of customers table from database
+glimpse(sqlQuery(conn,'select * from customers'))
+```
+Q1. Top 10 customers name according to sales value ?
+```{r}
+# Top 10 customers according to sales values.
+sqlQuery(conn,"SELECT index1, customer_name FROM customers WHERE index1 IN (SELECT index1 index1 FROM sales WHERE sales > 1000 ORDER BY sales DESC) LIMIT 10")
+```
+
